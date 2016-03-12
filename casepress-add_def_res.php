@@ -75,13 +75,19 @@ add_action( 'added_term_relationship', 'cp_add_def_res', 10000, 2);
 
 function cp_add_def_res($object_id, $tt_id) {
     $tt = get_term($tt_id);
-    if ($tt->taxonomy == 't-branche') {
+    if ($tt->taxonomy == 't-branche') { //Если добавленный термин - Подразделение
         $key = 'responsible-cp-posts-sql';
-        if (!get_post_meta($object_id, $key, 1)) {
-            if ($res_id = get_term_meta($tt_id, 'cp_def_responsible' , 1)) {
-                delete_post_meta($object_id, $key);
-                update_post_meta($object_id, $key, $res_id);
-                update_option('cp_def_res_added', 1);
+        if (!get_post_meta($object_id, $key, 1)) { //то смотрим нет ли уже ответственного у дела
+            if ($res_id = get_term_meta($tt_id, 'cp_def_responsible' , 1)) {//есть ли ответственный по умолчанию у подразделения
+                if (isset($_REQUEST['cp_responsible'])) { // если есть поле выбора персоны, то смотрим, что в нем
+                    $data = trim($_REQUEST['cp_responsible']);
+                    if (empty($data)) {//если это поле пустое, то доавбялем ответственного по умолчанию
+                        update_post_meta($object_id, $key, $res_id);
+                        update_option('cp_def_res_added', 1); //сообщаем, что доавблен ответсвенный по умолчанию, чтобы значение не удалялось из-за того что поле ответственный пустое caes_view_admin.php 770
+                    }
+                } else { // если поля выбора персоны вообще нет, то тоже добавляем ответственного по умолчанию
+                    update_post_meta($object_id, $key, $res_id);
+                }
             }
         }
     }
